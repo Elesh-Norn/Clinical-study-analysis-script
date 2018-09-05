@@ -3,7 +3,7 @@ scipy, math, numpy as np, os
 from sklearn import metrics
 from Anova import two_way_anova, one_way_anova
 from pandas.plotting import parallel_coordinates
-from config import LEGENDS, GLUCOSE_LIST, GLUCOSE_LIST_AUC, NORMAL_LIST
+from config import LEGENDS, GLUCOSE_LIST, GLUCOSE_LIST_AUC, NORMAL_LIST, HEATMAP_LIST
 
 # INIT PART
 final_db = pd.read_excel('Final formated DB.xlsx')
@@ -265,21 +265,7 @@ def check_stats(df, parameter, df_difference, df2):
 
 def heatmap(df, glucose=False):
 
-    df = df.drop(['Patient ID','Time point','Arm','Hospital', 'Hip', 'Waist',
-                 'Glucose tolerance','Dyslipidemia','Hypertension','NAFLD',
-                 'Bariatric surgery requested','start week 0','end week 12',
-                 'Active smoker', 'Insuline medication', 'Metformin',
-                 'Change of Insuline medication', 'Antibiotic','Exclusion',
-                 'CT L3 muscle area', 'CT L3 visceral fat area', 'CT L3 subcut fat area',
-                 'OGTT Glucose', 'OGTT Insuline', 'OGTT C peptide', 'OGTT Insuline?',
-                 'OGTT Glucose?','OGTT Glucose 0',
-                 'OGTT Glucose 30', 'OGTT Glucose 60','OGTT Glucose 90', 'OGTT Glucose 120',
-                 'OGTT Insulin -10', 'OGTT Insulin -5',	'OGTT Insulin 0', 'OGTT Insulin 30',
-                 'OGTT Insulin 60',	'OGTT Insulin 90', 'OGTT Insulin 120',
-                 'OGTT C-pep -10', 'OGTT C-pep -5', 'OGTT  C-pep 0', 'OGTT C-pep 30',
-                 'OGTT C-pep 60',	'OGTT C-pep 90',	'OGTT C-pep 120', 'Fibroscan probe',
-                 'Fibroscan Nb of valid measurements', 'Fibroscan Nb of total measurements '],
-        axis=1)
+    df = df.drop(HEATMAP_LIST, axis=1)
     if glucose == False:
         df = df.drop(GLUCOSE_LIST_AUC, axis=1)
     else:
@@ -324,9 +310,6 @@ def organise_results(df, parameter, note=None):
     parallel(df, parameter)
     swarmboxM0_M3(df, parameter)
 
-final_db = final_db.loc[final_db['Exclusion'] == 'No' ]
-final_db = final_db.loc[final_db['Change of Insuline medication'] == 'NO' ]
-
 
 def write_stats(list_of_analysis):
     '''Do all analysis and graph for a given list between;
@@ -353,3 +336,7 @@ def write_stats(list_of_analysis):
     writer = pd.ExcelWriter('Glucostats exclusion.xlsx')
     p_value_df.to_excel(writer, 'Sheet1')
     writer.save()
+
+#Example of selection of the subset of patient i want
+final_db = final_db.loc[final_db['Exclusion'] == 'No' ]
+final_db = final_db.loc[final_db['Change of Insuline medication'] == 'NO' ]

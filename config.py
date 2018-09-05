@@ -41,6 +41,21 @@ NORMAL_LIST = ['Age', 'Weight','BMI', 'W/H ratio','Systolic BP','Diastolic BP',
             'Apo-A1', 'AST', 'ALT', 'gGT',
             'haptoglobin', 'α-2-macroglobulin']
 
+HEATMAP_LIST = ['Patient ID','Time point','Arm','Hospital', 'Hip', 'Waist',
+             'Glucose tolerance','Dyslipidemia','Hypertension','NAFLD',
+             'Bariatric surgery requested','start week 0','end week 12',
+             'Active smoker', 'Insuline medication', 'Metformin',
+             'Change of Insuline medication', 'Antibiotic','Exclusion',
+             'CT L3 muscle area', 'CT L3 visceral fat area', 'CT L3 subcut fat area',
+             'OGTT Glucose', 'OGTT Insuline', 'OGTT C peptide', 'OGTT Insuline?',
+             'OGTT Glucose?','OGTT Glucose 0',
+             'OGTT Glucose 30', 'OGTT Glucose 60','OGTT Glucose 90', 'OGTT Glucose 120',
+             'OGTT Insulin -10', 'OGTT Insulin -5',	'OGTT Insulin 0', 'OGTT Insulin 30',
+             'OGTT Insulin 60',	'OGTT Insulin 90', 'OGTT Insulin 120',
+             'OGTT C-pep -10', 'OGTT C-pep -5', 'OGTT  C-pep 0', 'OGTT C-pep 30',
+             'OGTT C-pep 60',	'OGTT C-pep 90',	'OGTT C-pep 120', 'Fibroscan probe',
+             'Fibroscan Nb of valid measurements', 'Fibroscan Nb of total measurements ']
+
 GLUCOSE_LIST_AUC = GLUCOSE_LIST
 for item in ['AUC Insuline', 'AUC Glucose', 'AUC C peptide']:
     GLUCOSE_LIST_AUC.append(item)
