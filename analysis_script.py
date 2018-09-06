@@ -1,6 +1,5 @@
 import pandas as pd, seaborn as sns, matplotlib.pyplot as plt, \
     scipy, numpy as np, os
-from Anova import two_way_anova, one_way_anova
 from pandas.plotting import parallel_coordinates
 from config import LEGENDS, GLUCOSE_LIST, GLUCOSE_LIST_AUC, NORMAL_LIST, HEATMAP_LIST
 
@@ -107,24 +106,10 @@ def parallel(df, parameter):
     plotting of Inuline and Maltodextrine between M0 and M3 separatly"""
 
     # Initialisation part
-    df2 = pd.DataFrame()
-    df3 = pd.DataFrame()
     f, axes = plt.subplots(1, 2, sharey='all')
     global p_value_df
 
-    # Create a df with only pairs
-    for elements in list(['Patient ID', 'Arm']):
-        df2[elements] = df[elements]
-        df3[elements] = df[elements]
-    df2[parameter+' M0'] = df.loc[df['Time point'] == 'M0', parameter]
-    df2 = df2.set_index('Patient ID')
-    df2 = df2.dropna()
-    df3[parameter+' M3'] = df.loc[df['Time point'] == 'M3', parameter]
-    df3 = df3.set_index('Patient ID')
-    df3 = df3.drop(columns=['Arm'])
-    df3 = df3.dropna()
-    df2 = pd.concat([df2, df3], axis=1, join_axes=[df2.index])
-    df2 = df2.dropna()
+    df2 = get_paired_df(df, parameter)
 
     # Stat part
     inutest = compare_two_groups(df2.loc[df2['Arm'] == 'inuline',
@@ -158,6 +143,25 @@ def parallel(df, parameter):
     axes[1].legend_.remove()
 
     plt.savefig(PATH+"/"+f_s(parameter)+' parallel plot', dpi=400)
+
+
+def get_paired_df(df, parameter):
+    # Create a df with only pairs
+    df2 = pd.DataFrame()
+    df3 = pd.DataFrame()
+    for elements in list(['Patient ID', 'Arm']):
+        df2[elements] = df[elements]
+        df3[elements] = df[elements]
+    df2[parameter + ' M0'] = df.loc[df['Time point'] == 'M0', parameter]
+    df2 = df2.set_index('Patient ID')
+    df2 = df2.dropna()
+    df3[parameter + ' M3'] = df.loc[df['Time point'] == 'M3', parameter]
+    df3 = df3.set_index('Patient ID')
+    df3 = df3.drop(columns=['Arm'])
+    df3 = df3.dropna()
+    df2 = pd.concat([df2, df3], axis=1, join_axes=[df2.index])
+    df2 = df2.dropna()
+    return df2
 
 
 def compare_two_groups(group1, group2, paired=False):
@@ -337,6 +341,3 @@ def write_stats(list_of_analysis):
 
 
 final_db = final_db.loc[final_db['Exclusion'] == 'No']
-final_db = final_db.loc[final_db['Change of Insuline medication'] == 'NO']
-
-organise_results(final_db, 'Weight')
