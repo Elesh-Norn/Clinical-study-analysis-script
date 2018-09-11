@@ -55,7 +55,7 @@ def curveplots(df, parameter):
         dummyframe = dummyframe.assign(**{'Patient ID': df['Patient ID'],
                                           'Arm': df['Arm'],
                                           'Time point': df['Time point'],
-                                          'Time': x[counter],
+                                          'Time in minutes': x[counter],
                                           curve: df[elements]})
 
         if counter == 0:
@@ -63,12 +63,28 @@ def curveplots(df, parameter):
         else:
             df2 = pd.concat([df2, dummyframe])
 
-    plt.figure()
     g = sns.FacetGrid(df2, col='Arm', hue="Time point")
-    g.map(sns.lineplot, 'Time', curve, ci="sd")
+    axes = g.map(sns.lineplot, 'Time in minutes', curve, ci="sd")
     g.add_legend()
+    axes = g.axes.flatten()
+    axes[0].set_title('Inuline', fontsize = 20)
+    axes[1].set_title('Maltodextrine', fontsize = 20)
+    #axes[0].set_ylabel('Insulin in mU/L', fontsize = 15)
     plt.show()
 
+def get_simple_df(df, parameter):
+    # Create a df with only pairs
+    df2 = pd.DataFrame()
+    for elements in list(['Patient ID', 'Arm', 'Time point', parameter]):
+        df2[elements] = df[elements]
+    df2 = df2.dropna()
+    return df2
+
+def barplot_M0_M3(df, parameter):
+    plt.figure()
+    df = get_simple_df(df, parameter)
+    sns.barplot(x='Arm', y=parameter, hue='Time point', data=df, ci='sd')
+    
 
 def swarmbox_m0_m3(df, parameter, hue_param=None):
     """Plot two boxplots and give some simple stats. hue_param=None can be
@@ -76,7 +92,6 @@ def swarmbox_m0_m3(df, parameter, hue_param=None):
 
     df_difference, df2, newcolumn = substract_parameter(df, parameter)
     a = check_stats(df, parameter, df_difference, df2)
-
     # Graph boxplot
     plt.figure()
     sns.swarmplot(x='Arm', y=newcolumn, data=df2,
@@ -88,9 +103,10 @@ def swarmbox_m0_m3(df, parameter, hue_param=None):
 
     ax.set_ylabel(LEGENDS[parameter], fontsize=15)
     ax.set_xlabel('p= '+str(round(a[1], 3)), fontsize=15)
+    ax.set_title('Fasting insulin decreases with inulin treatment', fontsize=20)
 
     plt.tight_layout()
-    plt.savefig(PATH+"/"+f_s(parameter)+' boxplot', dpi=400)
+    #plt.savefig(PATH+"/"+f_s(parameter)+' boxplot', dpi=400)
 
 
 def simple_corell(df, parameter1, parameter2):
@@ -135,7 +151,7 @@ def parallel(df, parameter):
                          color='slateblue', ax=axes[1])
     axes[0].set(title='Inuline', xticks=[])
     axes[0].set_ylabel(LEGENDS[parameter], fontsize=15)
-    axes[0].set_xlabel('p= '+str(round(inutest[1], 3)), fontsize=15)
+    axes[0].set_xlabel('p= '+str(round(inutest[1], 5)), fontsize=15)
     axes[0].tick_params(labelbottom='off')
     axes[0].legend_.remove()
     axes[1].set(title='Maltodextrine', xticks=[])
@@ -233,7 +249,7 @@ def check_stats(df, parameter, df_difference, df2):
     # Create an excell writter object of this dataframe
     writer = pd.ExcelWriter(PATH+"/"+f_s(parameter)+' descriptive stat.xlsx')
     stat_df.to_excel(writer, 'Sheet1')
-    writer.save()
+    #writer.save()
 
     # Create unpaired DF for checking normality and stats testing.
     list1 = df2.loc[df2['Arm'] == 'inuline', 'Difference of '+parameter].dropna()
@@ -257,7 +273,7 @@ def check_stats(df, parameter, df_difference, df2):
 
     g = sns.FacetGrid(df2[['Arm', 'Difference of '+parameter]], col='Arm')
     g.map(sns.distplot, "Difference of "+parameter)
-    plt.savefig(PATH+"/"+f_s(parameter)+' histogramme', dpi=400)
+    #plt.savefig(PATH+"/"+f_s(parameter)+' histogramme', dpi=400)
 
     return difference_test
 
@@ -341,3 +357,4 @@ def write_stats(list_of_analysis):
 
 
 final_db = final_db.loc[final_db['Exclusion'] == 'No']
+heatmap(final_db)
