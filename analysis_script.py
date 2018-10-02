@@ -55,7 +55,7 @@ def curveplots(df, parameter):
         dummyframe = dummyframe.assign(**{'Patient ID': df['Patient ID'],
                                           'Arm': df['Arm'],
                                           'Time point': df['Time point'],
-                                          'Time': x[counter],
+                                          'Time in minutes': x[counter],
                                           curve: df[elements]})
 
         if counter == 0:
@@ -65,10 +65,26 @@ def curveplots(df, parameter):
 
     plt.figure()
     g = sns.FacetGrid(df2, col='Arm', hue="Time point")
-    g.map(sns.lineplot, 'Time', curve, ci="sd")
+    axes = g.map(sns.lineplot, 'Time in minutes', curve, ci="sd")
     g.add_legend()
-    
-    plt.savefig(PATH + "/" + f_s(parameter) + ' parallel plot', dpi=300)
+    axes = g.axes.flatten()
+    axes[0].set_title('Inuline', fontsize = 20)
+    axes[1].set_title('Maltodextrine', fontsize = 20)
+    axes[0].set_ylabel('fill legend', fontsize = 15)
+    plt.show()
+
+def get_simple_df(df, parameter):
+    # Create a df with only pairs
+    df2 = pd.DataFrame()
+    for elements in list(['Patient ID', 'Arm', 'Time point', parameter]):
+        df2[elements] = df[elements]
+    df2 = df2.dropna()
+    return df2
+
+def barplot_M0_M3(df, parameter):
+    plt.figure()
+    df = get_simple_df(df, parameter)
+    sns.barplot(x='Arm', y=parameter, hue='Time point', data=df, ci='sd')
 
 
 def swarmbox_m0_m3(df, parameter, hue_param=None):
@@ -89,11 +105,9 @@ def swarmbox_m0_m3(df, parameter, hue_param=None):
 
     ax.set_ylabel(LEGENDS[parameter], fontsize=15)
     ax.set_xlabel('p= '+str(round(a[1], 3)), fontsize=15)
-    ax.set_title('Difference of patient\'s weight during the study',
-                 fontsize=20)
 
     plt.tight_layout()
-    plt.savefig(PATH+"/"+f_s(parameter)+' boxplot', dpi=300)
+    plt.savefig(PATH+"/"+f_s(parameter)+' boxplot', dpi=400)
 
 
 def simple_corell(df, parameter1, parameter2):
@@ -139,7 +153,7 @@ def parallel(df, parameter):
     axes[0].set(xticks=[])
     axes[0].set_title(fontsize=20, label='Inuline')
     axes[0].set_ylabel(LEGENDS[parameter], fontsize=15)
-    axes[0].set_xlabel('p= '+str(round(inutest[1], 5)), fontsize=15)
+    axes[0].set_xlabel('p= '+str(round(inutest[1], 3)), fontsize=15)
     axes[0].tick_params(labelbottom='off')
     axes[0].legend_.remove()
     axes[1].set(xticks=[])
@@ -346,5 +360,3 @@ def write_stats(list_of_analysis):
 
 
 final_db = final_db.loc[final_db['Exclusion'] == 'No']
-
-organise_results(final_db, 'Weight')
