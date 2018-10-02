@@ -28,4 +28,3 @@ def one_way_anova(data, parameter):
     table = sm.stats.anova_lm(data_lm, typ=2)
     # Type 2 ANOVA DataFrame
     return(table)
-    

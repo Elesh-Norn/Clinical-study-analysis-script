@@ -67,7 +67,8 @@ def curveplots(df, parameter):
     g = sns.FacetGrid(df2, col='Arm', hue="Time point")
     g.map(sns.lineplot, 'Time', curve, ci="sd")
     g.add_legend()
-    plt.show()
+    
+    plt.savefig(PATH + "/" + f_s(parameter) + ' parallel plot', dpi=300)
 
 
 def swarmbox_m0_m3(df, parameter, hue_param=None):
@@ -88,9 +89,11 @@ def swarmbox_m0_m3(df, parameter, hue_param=None):
 
     ax.set_ylabel(LEGENDS[parameter], fontsize=15)
     ax.set_xlabel('p= '+str(round(a[1], 3)), fontsize=15)
+    ax.set_title('Difference of patient\'s weight during the study',
+                 fontsize=20)
 
     plt.tight_layout()
-    plt.savefig(PATH+"/"+f_s(parameter)+' boxplot', dpi=400)
+    plt.savefig(PATH+"/"+f_s(parameter)+' boxplot', dpi=300)
 
 
 def simple_corell(df, parameter1, parameter2):
@@ -133,16 +136,18 @@ def parallel(df, parameter):
     parallel_coordinates(df3, 'Arm',
                          cols=[parameter+' M0', parameter+' M3'],
                          color='slateblue', ax=axes[1])
-    axes[0].set(title='Inuline', xticks=[])
+    axes[0].set(xticks=[])
+    axes[0].set_title(fontsize=20, label='Inuline')
     axes[0].set_ylabel(LEGENDS[parameter], fontsize=15)
-    axes[0].set_xlabel('p= '+str(round(inutest[1], 3)), fontsize=15)
+    axes[0].set_xlabel('p= '+str(round(inutest[1], 5)), fontsize=15)
     axes[0].tick_params(labelbottom='off')
     axes[0].legend_.remove()
-    axes[1].set(title='Maltodextrine', xticks=[])
+    axes[1].set(xticks=[])
+    axes[1].set_title(fontsize=20, label='Maltodextrine')
     axes[1].set_xlabel('p= '+str(round(maltotest[1], 3)), fontsize=15)
     axes[1].legend_.remove()
 
-    plt.savefig(PATH+"/"+f_s(parameter)+' parallel plot', dpi=400)
+    plt.savefig(PATH+"/"+f_s(parameter)+' parallel plot', dpi=300)
 
 
 def get_paired_df(df, parameter):
@@ -341,3 +346,5 @@ def write_stats(list_of_analysis):
 
 
 final_db = final_db.loc[final_db['Exclusion'] == 'No']
+
+organise_results(final_db, 'Weight')
