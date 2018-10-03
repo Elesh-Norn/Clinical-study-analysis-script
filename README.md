@@ -1,4 +1,4 @@
-# F4G Clinical study analysis script
+# Clinical study analysis script
 
 Hello,
 
