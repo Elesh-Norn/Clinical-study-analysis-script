@@ -22,7 +22,7 @@ def substract_parameter(df, parameter):
     series_m3 = df.loc[df['Time point'] == 'M3', parameter]
     df2 = df.loc[df['Time point'] == 'M0']
     difference_list = series_m3.sub(series_m0)
-    df2[newcolumn] = difference_list
+    df2.loc[:,newcolumn] = difference_list
     return difference_list, df2, newcolumn
 
 
@@ -73,6 +73,7 @@ def curveplots(df, parameter):
     axes[0].set_ylabel('fill legend', fontsize = 15)
     plt.show()
 
+
 def get_simple_df(df, parameter):
     # Create a df with only pairs
     df2 = pd.DataFrame()
@@ -81,13 +82,14 @@ def get_simple_df(df, parameter):
     df2 = df2.dropna()
     return df2
 
+
 def barplot_M0_M3(df, parameter):
     plt.figure()
     df = get_simple_df(df, parameter)
     sns.barplot(x='Arm', y=parameter, hue='Time point', data=df, ci='sd')
 
 
-def swarmbox_m0_m3(df, parameter, hue_param=None):
+def swarmbox_m0_m3(df, parameter, hue_param=None, save=False):
     """Plot two boxplots and give some simple stats. hue_param=None can be
     changed for coloring the dots separatly"""
 
@@ -97,17 +99,18 @@ def swarmbox_m0_m3(df, parameter, hue_param=None):
     # Graph boxplot
     plt.figure()
     sns.swarmplot(x='Arm', y=newcolumn, data=df2,
-                  palette=sns.crayon_palette(('Vivid Violet',
-                                              'Burnt Sienna', 'Shamrock')))
+                  palette=sns.crayon_palette(['Vivid Violet',
+                                              'Burnt Sienna', 'Shamrock']))
     ax = sns.boxplot(x='Arm', y=newcolumn, hue=hue_param, data=df2,
-                     palette=sns.crayon_palette(('Sea Green', 'Navy Blue',
-                                                 'Vivid Violet')))
+                     palette=sns.crayon_palette(['Sea Green', 'Navy Blue',
+                                                 'Vivid Violet']))
 
     ax.set_ylabel(LEGENDS[parameter], fontsize=15)
     ax.set_xlabel('p= '+str(round(a[1], 3)), fontsize=15)
 
     plt.tight_layout()
-    plt.savefig(PATH+"/"+f_s(parameter)+' boxplot', dpi=400)
+    if save:
+        plt.savefig(PATH+"/"+f_s(parameter)+' boxplot', dpi=400)
 
 
 def simple_corell(df, parameter1, parameter2):
@@ -118,7 +121,7 @@ def simple_corell(df, parameter1, parameter2):
                hue='Time point', col='Arm', ci=None)
 
 
-def parallel(df, parameter):
+def parallel(df, parameter, save=False):
     """Needs a dataframe and the parameter to call a graph with parallel
     plotting of Inuline and Maltodextrine between M0 and M3 separatly"""
 
@@ -160,9 +163,8 @@ def parallel(df, parameter):
     axes[1].set_title(fontsize=20, label='Maltodextrine')
     axes[1].set_xlabel('p= '+str(round(maltotest[1], 3)), fontsize=15)
     axes[1].legend_.remove()
-
-    plt.savefig(PATH+"/"+f_s(parameter)+' parallel plot', dpi=300)
-
+    if save:
+        plt.savefig(PATH+"/"+f_s(parameter)+' parallel plot', dpi=300)
 
 def get_paired_df(df, parameter):
     # Create a df with only pairs
@@ -221,7 +223,7 @@ def compare_two_groups(group1, group2, paired=False):
             return name_test, test, normality
 
 
-def check_stats(df, parameter, df_difference, df2):
+def check_stats(df, parameter, df_difference, df2, save=False):
     """Do the stats of M0/M3 and the difference of a parameter between inulin,
     and maltodextrine"""
 
@@ -250,9 +252,10 @@ def check_stats(df, parameter, df_difference, df2):
     print(stat_df.head())
 
     # Create an excell writter object of this dataframe
-    writer = pd.ExcelWriter(PATH+"/"+f_s(parameter)+' descriptive stat.xlsx')
-    stat_df.to_excel(writer, 'Sheet1')
-    writer.save()
+    if save:
+        writer = pd.ExcelWriter(PATH+"/"+f_s(parameter)+' descriptive stat.xlsx')
+        stat_df.to_excel(writer, 'Sheet1')
+        writer.save()
 
     # Create unpaired DF for checking normality and stats testing.
     list1 = df2.loc[df2['Arm'] == 'inuline', 'Difference of '+parameter].dropna()
@@ -276,7 +279,8 @@ def check_stats(df, parameter, df_difference, df2):
 
     g = sns.FacetGrid(df2[['Arm', 'Difference of '+parameter]], col='Arm')
     g.map(sns.distplot, "Difference of "+parameter)
-    plt.savefig(PATH+"/"+f_s(parameter)+' histogramme', dpi=400)
+    if save:
+        plt.savefig(PATH+"/"+f_s(parameter)+' histogramme', dpi=400)
 
     return difference_test
 
@@ -330,7 +334,7 @@ def organise_results(df, parameter, note=None):
     swarmbox_m0_m3(df, parameter)
 
 
-def write_stats(list_of_analysis):
+def write_stats(list_of_analysis, save=False):
     """Do all analysis and graph for a given list between;
     GLUCOSE_LIST
     GLUCOSE_LIST_AUC
@@ -352,9 +356,10 @@ def write_stats(list_of_analysis):
         organise_results(df1, 'AUC Insuline', note=' exclusion')
         organise_results(df2, 'AUC Glucose', note=' exclusion')
         organise_results(df3, 'AUC C peptide', note=' without medication')
-    writer = pd.ExcelWriter('Glucostats exclusion.xlsx')
-    p_value_df.to_excel(writer, 'Sheet1')
-    writer.save()
+    if save:
+        writer = pd.ExcelWriter('Glucostats exclusion.xlsx')
+        p_value_df.to_excel(writer, 'Sheet1') 
+        writer.save()
 
 # Example of selection of the subset of patient i want
 
