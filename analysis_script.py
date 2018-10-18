@@ -2,7 +2,8 @@ import pandas as pd, seaborn as sns, matplotlib.pyplot as plt, \
     scipy, numpy as np, os
 from pandas.plotting import parallel_coordinates
 from config import LEGENDS, GLUCOSE_LIST, GLUCOSE_LIST_AUC, NORMAL_LIST, HEATMAP_LIST
-
+from statsmodels.stats import multitest
+from scipy import stats
 # INIT PART
 final_db = pd.read_excel('Final formated DB.xlsx')
 p_value_df = pd.DataFrame(columns=['parameter', 'All p', 'Inu p', 'Malto p'])
@@ -11,7 +12,6 @@ sns.set_style("whitegrid")
 PATH = ''
 
 # Functions
-
 
 def substract_parameter(df, parameter):
     """Add a column that is the substraction of the two time points of the
@@ -22,7 +22,7 @@ def substract_parameter(df, parameter):
     series_m3 = df.loc[df['Time point'] == 'M3', parameter]
     df2 = df.loc[df['Time point'] == 'M0']
     difference_list = series_m3.sub(series_m0)
-    df2.loc[:,newcolumn] = difference_list
+    df2.loc[:, newcolumn] = difference_list
     return difference_list, df2, newcolumn
 
 
@@ -68,9 +68,9 @@ def curveplots(df, parameter):
     axes = g.map(sns.lineplot, 'Time in minutes', curve, ci="sd")
     g.add_legend()
     axes = g.axes.flatten()
-    axes[0].set_title('Inuline', fontsize = 20)
-    axes[1].set_title('Maltodextrine', fontsize = 20)
-    axes[0].set_ylabel('fill legend', fontsize = 15)
+    axes[0].set_title('Inuline', fontsize=20)
+    axes[1].set_title('Maltodextrine', fontsize=20)
+    axes[0].set_ylabel('fill legend', fontsize=15)
     plt.show()
 
 
@@ -165,6 +165,7 @@ def parallel(df, parameter, save=False):
     axes[1].legend_.remove()
     if save:
         plt.savefig(PATH+"/"+f_s(parameter)+' parallel plot', dpi=300)
+
 
 def get_paired_df(df, parameter):
     # Create a df with only pairs
@@ -261,7 +262,11 @@ def check_stats(df, parameter, df_difference, df2, save=False):
     list1 = df2.loc[df2['Arm'] == 'inuline', 'Difference of '+parameter].dropna()
     list2 = df2.loc[df2['Arm'] == 'maltodextrine',
                     'Difference of '+parameter].dropna()
+    
     difference_test = compare_two_groups(list1, list2, paired=False)
+    equal_start = compare_two_groups(list3, list4, paired=False)
+    
+    print(equal_start, 'ARE THEY EQUAL')
 
     p_value_df.loc[parameter, 'All mean'] = stat_df.loc['mean', 'Difference']
     p_value_df.loc[parameter, 'All std'] = stat_df.loc['std', 'Difference']
@@ -294,9 +299,9 @@ def heatmap(df, glucose=False):
         df = df.drop(NORMAL_LIST, axis=1)
         df = df.drop(['Masse Maigre', 'Masse Grasse', 'Height', 'Xc/height',
                       'Bioimpedance Xc'], axis=1)
-    df.Gender.replace(['male', 'female'], [1, 0], inplace=True)
-    df = df.drop(df.columns[df.columns.str.contains('unnamed', case=False)],
-                 axis=1)
+    #df.Gender.replace(['male', 'female'], [1, 0], inplace=True)
+    #df = df.drop(df.columns[df.columns.str.contains('unnamed', case=False)],
+                 #axis=1)
 
     # Generate a mask for the upper triangle
     df_corr = df.corr()
@@ -358,10 +363,57 @@ def write_stats(list_of_analysis, save=False):
         organise_results(df3, 'AUC C peptide', note=' without medication')
     if save:
         writer = pd.ExcelWriter('Glucostats exclusion.xlsx')
-        p_value_df.to_excel(writer, 'Sheet1') 
+        p_value_df.to_excel(writer, 'Sheet1')
         writer.save()
+
+def spearman_p_value_DataFrame(df):
+    """
+    Return a correlation table and another table with p_value as DataFrame
+    """
+    p_value_df = pd.DataFrame(columns = df.columns, index= df.columns)
+    corrdf = pd.DataFrame(columns = df.columns, index= df.columns)
+    for a in df.columns:
+        for b in df.columns:
+            _thearray = np.column_stack((df[a].tolist(), df[b].tolist()))
+            r, p = stats.spearmanr(_thearray)
+            p_value_df.loc[[a], [b]] = p
+            corrdf.loc[[a], [b]] = r
+    return p_value_df, corrdf
+
+def correct_p_values(df):
+    """
+    From a p-value table, return a corrected one
+    with holm correction.
+    """
+    p_value_df = pd.DataFrame(columns = df.columns, index= df.columns)
+    _, p, sidak, bf = multitest.multipletests(df.values.flatten(), method='holm')
+    counter = 0
+    for a in df.columns:
+        for b in df.columns:
+            p_value_df.loc[[a], [b]] = p[counter]
+            counter +=1
+    return p_value_df
+
+def do_heatmap(df):
+    """
+    Make a bottom heatmap
+    """
+    mask = np.zeros_like(df, dtype=np.bool)
+    mask[np.triu_indices_from(mask)] = True
+    cmap = sns.diverging_palette(220, 10, as_cmap=True)
+    sns.heatmap(df.values.tolist(), yticklabels=df.columns, xticklabels=df.columns, vmin=-1, vmax=1, center=0,
+               cmap=cmap, linewidths=.1, mask = mask)
+
+def revert_map(df):
+    """
+    Make a top heatmap
+    """
+    cmap = sns.light_palette("green", reverse=True)
+    mask = np.zeros_like(df, dtype=np.bool)
+    mask[np.triu_indices_from(mask)] = True
+    mask = np.invert(mask)
+    sns.heatmap(df.values.tolist(), yticklabels=df.columns, xticklabels=df.columns, vmin=0, vmax=1, center=0.00025,
+               cmap=cmap, linewidths=.1, annot=True, mask=mask)
 
 # Example of selection of the subset of patient i want
 
-
-final_db = final_db.loc[final_db['Exclusion'] == 'No']
