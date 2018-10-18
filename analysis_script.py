@@ -156,7 +156,7 @@ def parallel(df, parameter, save=False):
     axes[0].set(xticks=[])
     axes[0].set_title(fontsize=20, label='Inuline')
     axes[0].set_ylabel(LEGENDS[parameter], fontsize=15)
-    axes[0].set_xlabel('p= '+str(round(inutest[1], 3)), fontsize=15)
+    axes[0].set_xlabel('p= '+str(round(inutest[1], 5)), fontsize=15)
     axes[0].tick_params(labelbottom='off')
     axes[0].legend_.remove()
     axes[1].set(xticks=[])
@@ -264,9 +264,6 @@ def check_stats(df, parameter, df_difference, df2, save=False):
                     'Difference of '+parameter].dropna()
     
     difference_test = compare_two_groups(list1, list2, paired=False)
-    equal_start = compare_two_groups(list3, list4, paired=False)
-    
-    print(equal_start, 'ARE THEY EQUAL')
 
     p_value_df.loc[parameter, 'All mean'] = stat_df.loc['mean', 'Difference']
     p_value_df.loc[parameter, 'All std'] = stat_df.loc['std', 'Difference']
@@ -417,3 +414,7 @@ def revert_map(df):
 
 # Example of selection of the subset of patient i want
 
+
+final_db = final_db.loc[final_db['Exclusion'] == "No"]
+swarmbox_m0_m3(final_db,'HIE')
+parallel(final_db, 'HIE')
