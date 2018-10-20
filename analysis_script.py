@@ -1,21 +1,25 @@
 import pandas as pd, seaborn as sns, matplotlib.pyplot as plt, \
     scipy, numpy as np, os
-from pandas.plotting import parallel_coordinates
-from config import LEGENDS, GLUCOSE_LIST, GLUCOSE_LIST_AUC, NORMAL_LIST, HEATMAP_LIST
+from config import GLUCOSE_LIST_AUC
 from statsmodels.stats import multitest
 from scipy import stats
+import graph_functions
+
 # INIT PART
 final_db = pd.read_excel('Final formated DB.xlsx')
 p_value_df = pd.DataFrame(columns=['parameter', 'All p', 'Inu p', 'Malto p'])
 sns.set_style("whitegrid")
+
 # GLOBAL
 PATH = ''
 
 # Functions
 
 def substract_parameter(df, parameter):
-    """Add a column that is the substraction of the two time points of the
-    study for a given parameter"""
+    """
+    Add a column that is the substraction of the two time points of the
+    study for a given parameter
+    """
     newcolumn = "Difference of "+parameter
     df = df.set_index('Patient ID')
     series_m0 = df.loc[df['Time point'] == 'M0', parameter]
@@ -23,59 +27,14 @@ def substract_parameter(df, parameter):
     df2 = df.loc[df['Time point'] == 'M0']
     difference_list = series_m3.sub(series_m0)
     df2.loc[:, newcolumn] = difference_list
-    return difference_list, df2, newcolumn
 
-
-def curveplots(df, parameter):
-    """Will plot the curves for OGTT. parameter should be Insuline, C peptide
-    or Glucose in string"""
-    sns.set_style("whitegrid")
-    if parameter == "Insuline":
-        curve = "Insulin in mU/L"
-        y = ['OGTT Insulin -10', 'OGTT Insulin -5', 'OGTT Insulin 0',
-             'OGTT Insulin 30',	'OGTT Insulin 60',	'OGTT Insulin 90',
-             'OGTT Insulin 120']
-        x = [-10, -5, 0, 30, 60, 90, 120]
-
-    elif parameter == "C peptide":
-        curve = 'C peptide in mU/L'
-        y = ['OGTT C-pep -10', 'OGTT C-pep -5', 'OGTT  C-pep 0',
-             'OGTT C-pep 30', 'OGTT C-pep 60', 'OGTT C-pep 90',
-             'OGTT C-pep 120']
-        x = [-10, -5, 0, 30, 60, 90, 120]
-    elif parameter == "Glucose":
-        curve = "Glucose in mg/dl"
-        y = ['OGTT Glucose 0', 'OGTT Glucose 30', 'OGTT Glucose 60',
-             'OGTT Glucose 90', 'OGTT Glucose 120']
-        x = [0, 30, 60, 90, 120]
-
-    df2 = pd.DataFrame()
-    for counter, elements in enumerate(y, 0):
-        dummyframe = pd.DataFrame()
-        dummyframe = dummyframe.assign(**{'Patient ID': df['Patient ID'],
-                                          'Arm': df['Arm'],
-                                          'Time point': df['Time point'],
-                                          'Time in minutes': x[counter],
-                                          curve: df[elements]})
-
-        if counter == 0:
-            df2 = dummyframe
-        else:
-            df2 = pd.concat([df2, dummyframe])
-
-    plt.figure()
-    g = sns.FacetGrid(df2, col='Arm', hue="Time point")
-    axes = g.map(sns.lineplot, 'Time in minutes', curve, ci="sd")
-    g.add_legend()
-    axes = g.axes.flatten()
-    axes[0].set_title('Inuline', fontsize=20)
-    axes[1].set_title('Maltodextrine', fontsize=20)
-    axes[0].set_ylabel('fill legend', fontsize=15)
-    plt.show()
+    return difference_list, df2
 
 
 def get_simple_df(df, parameter):
-    # Create a df with only pairs
+    """
+    Create a small dataframe with only pairs, Time point and Arm.
+    """
     df2 = pd.DataFrame()
     for elements in list(['Patient ID', 'Arm', 'Time point', parameter]):
         df2[elements] = df[elements]
@@ -83,50 +42,39 @@ def get_simple_df(df, parameter):
     return df2
 
 
-def barplot_M0_M3(df, parameter):
-    plt.figure()
-    df = get_simple_df(df, parameter)
-    sns.barplot(x='Arm', y=parameter, hue='Time point', data=df, ci='sd')
-
-
 def swarmbox_m0_m3(df, parameter, hue_param=None, save=False):
-    """Plot two boxplots and give some simple stats. hue_param=None can be
-    changed for coloring the dots separatly"""
+    """
+    Plot two boxplots and give some simple stats. hue_param=None can be
+    changed for coloring the dots separatly
+    """
 
-    df_difference, df2, newcolumn = substract_parameter(df, parameter)
-    a = check_stats(df, parameter, df_difference, df2)
+    difference_list, df2 = substract_parameter(df, parameter)
+    a = check_stats(df, parameter, difference_list, df2)
+    fig = graph_functions.swarmbox(df2, parameter, a, hue_param)
+    fig.tight_layout()
+    fig.show()
 
-    # Graph boxplot
-    plt.figure()
-    sns.swarmplot(x='Arm', y=newcolumn, data=df2,
-                  palette=sns.crayon_palette(['Vivid Violet',
-                                              'Burnt Sienna', 'Shamrock']))
-    ax = sns.boxplot(x='Arm', y=newcolumn, hue=hue_param, data=df2,
-                     palette=sns.crayon_palette(['Sea Green', 'Navy Blue',
-                                                 'Vivid Violet']))
-
-    ax.set_ylabel(LEGENDS[parameter], fontsize=15)
-    ax.set_xlabel('p= '+str(round(a[1], 3)), fontsize=15)
-
-    plt.tight_layout()
     if save:
-        plt.savefig(PATH+"/"+f_s(parameter)+' boxplot', dpi=400)
+        plt.savefig(PATH + "/" + f_s(parameter) + ' boxplot', dpi=400)
 
 
 def simple_corell(df, parameter1, parameter2):
-    """Plot parameter1 in function of parameter2 and try to draw a regression
-    line. I tweek a bit the argument for my use"""
+    """
+    Plot parameter1 in function of parameter2 and try to draw a regression
+    line. I tweek a bit the argument for my use
+    """
     df2 = df
     sns.lmplot(parameter1, parameter2, data=df2,
                hue='Time point', col='Arm', ci=None)
 
 
 def parallel(df, parameter, save=False):
-    """Needs a dataframe and the parameter to call a graph with parallel
-    plotting of Inuline and Maltodextrine between M0 and M3 separatly"""
+    """
+    Needs a dataframe and the parameter to call a graph with parallel
+    plotting of Inuline and Maltodextrine between M0 and M3 separatly
+    """
 
     # Initialisation part
-    f, axes = plt.subplots(1, 2, sharey='all')
     global p_value_df
 
     df2 = get_paired_df(df, parameter)
@@ -147,22 +95,8 @@ def parallel(df, parameter, save=False):
     p_value_df.loc[parameter, 'Malto p'] = maltotest[1]
 
     # Graph part
-    parallel_coordinates(df2, 'Arm',
-                         cols=[parameter+' M0', parameter+' M3'],
-                         color='mediumseagreen', ax=axes[0])
-    parallel_coordinates(df3, 'Arm',
-                         cols=[parameter+' M0', parameter+' M3'],
-                         color='slateblue', ax=axes[1])
-    axes[0].set(xticks=[])
-    axes[0].set_title(fontsize=20, label='Inuline')
-    axes[0].set_ylabel(LEGENDS[parameter], fontsize=15)
-    axes[0].set_xlabel('p= '+str(round(inutest[1], 5)), fontsize=15)
-    axes[0].tick_params(labelbottom='off')
-    axes[0].legend_.remove()
-    axes[1].set(xticks=[])
-    axes[1].set_title(fontsize=20, label='Maltodextrine')
-    axes[1].set_xlabel('p= '+str(round(maltotest[1], 3)), fontsize=15)
-    axes[1].legend_.remove()
+    fig = graph_functions.parallel_graph(parameter, df2, df3, inutest, maltotest)
+    fig.show()
     if save:
         plt.savefig(PATH+"/"+f_s(parameter)+' parallel plot', dpi=300)
 
@@ -187,8 +121,9 @@ def get_paired_df(df, parameter):
 
 
 def compare_two_groups(group1, group2, paired=False):
-    """Do stats for paired or unpaired comparison between groups and return
-    them"""
+    """
+    Do stats for paired or unpaired comparison between groups and return them
+    """
     if len(group1) > 8 and len(group2) > 8:
         stat1, norm1 = scipy.stats.normaltest(group1)
         stat2, norm2 = scipy.stats.normaltest(group2)
@@ -225,8 +160,10 @@ def compare_two_groups(group1, group2, paired=False):
 
 
 def check_stats(df, parameter, df_difference, df2, save=False):
-    """Do the stats of M0/M3 and the difference of a parameter between inulin,
-    and maltodextrine"""
+    """
+    Do the stats of M0/M3 and the difference of a parameter between inulin,
+    and maltodextrine
+    """
 
     # initialise DF needed
     df_m0 = df.loc[df['Time point'] == 'M0', parameter]
@@ -286,36 +223,10 @@ def check_stats(df, parameter, df_difference, df2, save=False):
 
     return difference_test
 
-
-def heatmap(df, glucose=False):
-
-    df = df.drop(HEATMAP_LIST, axis=1)
-    if glucose is False:
-        df = df.drop(GLUCOSE_LIST_AUC, axis=1)
-    else:
-        df = df.drop(NORMAL_LIST, axis=1)
-        df = df.drop(['Masse Maigre', 'Masse Grasse', 'Height', 'Xc/height',
-                      'Bioimpedance Xc'], axis=1)
-    #df.Gender.replace(['male', 'female'], [1, 0], inplace=True)
-    #df = df.drop(df.columns[df.columns.str.contains('unnamed', case=False)],
-                 #axis=1)
-
-    # Generate a mask for the upper triangle
-    df_corr = df.corr()
-    mask = np.zeros_like(df_corr, dtype=np.bool)
-    mask[np.triu_indices_from(mask)] = True
-    df_corr = df.corr()
-
-    # Colormap
-    cmap = sns.diverging_palette(220, 10, as_cmap=True)
-    sns.clustermap(df_corr, vmin=-1, vmax=1,
-                   linewidths=.1, cmap=cmap,
-                   xticklabels=df_corr.columns, yticklabels=df_corr.columns)
-    plt.show()
-
-
 def f_s(parameter):
-    """format string to make valid filename"""
+    """
+    format string to make valid filename
+    """
     if '/' in parameter:
         return parameter.replace("/", "-")
     else:
@@ -337,10 +248,12 @@ def organise_results(df, parameter, note=None):
 
 
 def write_stats(list_of_analysis, save=False):
-    """Do all analysis and graph for a given list between;
+    """
+    Do all analysis and graph for a given list between;
     GLUCOSE_LIST
     GLUCOSE_LIST_AUC
-    NORMAL_LIST"""
+    NORMAL_LIST
+    """
     global p_value_df
 
     for item in list_of_analysis:
@@ -391,30 +304,5 @@ def correct_p_values(df):
             counter +=1
     return p_value_df
 
-def do_heatmap(df):
-    """
-    Make a bottom heatmap
-    """
-    mask = np.zeros_like(df, dtype=np.bool)
-    mask[np.triu_indices_from(mask)] = True
-    cmap = sns.diverging_palette(220, 10, as_cmap=True)
-    sns.heatmap(df.values.tolist(), yticklabels=df.columns, xticklabels=df.columns, vmin=-1, vmax=1, center=0,
-               cmap=cmap, linewidths=.1, mask = mask)
-
-def revert_map(df):
-    """
-    Make a top heatmap
-    """
-    cmap = sns.light_palette("green", reverse=True)
-    mask = np.zeros_like(df, dtype=np.bool)
-    mask[np.triu_indices_from(mask)] = True
-    mask = np.invert(mask)
-    sns.heatmap(df.values.tolist(), yticklabels=df.columns, xticklabels=df.columns, vmin=0, vmax=1, center=0.00025,
-               cmap=cmap, linewidths=.1, annot=True, mask=mask)
-
-# Example of selection of the subset of patient i want
 
 
-final_db = final_db.loc[final_db['Exclusion'] == "No"]
-swarmbox_m0_m3(final_db,'HIE')
-parallel(final_db, 'HIE')
