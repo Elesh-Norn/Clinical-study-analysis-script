@@ -25,7 +25,8 @@ LEGENDS = {'Weight': 'Weight in kg', 'Height': 'Height in cm',
             'AUC C peptide': 'C peptide AUCs', 'IGI 30': 'IGI 30',
             'Mean BP':'Mean blood pressure in mmHg', 'Age':'Age',
             'Waist':'Waist in cm', 'IGI Cpept':'Insulogenic index calculated with C peptide',
-            'HIE': 'Hepatic insulin extraction'}
+            'HIE': 'Hepatic insulin extraction', 'CPRI': 'CPRI',
+            'PPCPRI': 'Postprandial CPRI'}
 
 GLUCOSE_LIST = ['Average Fasting Glucose', 'Average Fasting Insulin',
                 'Average Fasting C peptide','HbA1c', 'Matsuda index',

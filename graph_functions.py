@@ -185,3 +185,6 @@ def lolliplot(df):
     plt.tight_layout()
 
     return plt.gcf()
+
+
+

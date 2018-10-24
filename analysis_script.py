@@ -305,4 +305,22 @@ def correct_p_values(df):
     return p_value_df
 
 
+final_db = final_db.loc[final_db['Exclusion'] == 'No']
+final_db = final_db.loc[final_db['Change of Insuline medication'] == 'NO']
+final_db = final_db.loc[final_db['OGTT C peptide'] == 'Yes']
 
+def correl_graph(df, x, y, save=False):
+
+    df = df[[x,y]].dropna()
+
+    if save is True:
+        writer = pd.ExcelWriter('Verif Excel.xlsx')
+        df.to_excel(writer, 'Sheet1')
+        writer.save()
+    slope, intercept, r_value, d, e = scipy.stats.linregress(np.log(df[x]), df[y])
+    sns.lmplot(x=x, y=y, logx=True, data=df)
+    legend = 'y = '+str(round(slope,2))+'ln(x) + '+str(round(intercept, 2))+'\n'+'R**2 = '+str(round(r_value**2,4))
+    x_box_coor = plt.gca().get_xlim()[1] - plt.gca().get_xlim()[1]/3
+    y_box_coor = plt.gca().get_ylim()[1] - plt.gca().get_ylim()[1] / 6
+    plt.gca().text(x_box_coor, y_box_coor, legend, style='italic',
+            bbox={'facecolor': 'white', 'alpha': 1, 'pad': 10, 'lw':10})
