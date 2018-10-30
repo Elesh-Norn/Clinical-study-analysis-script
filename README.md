@@ -8,7 +8,7 @@ Since it's data from the real world, they are messy and most of the work is
 to select and process the good data for the right scientific question.  
 
 I can use Jupyter Notebook to look at them, or independantly with tkinter widget 
-integrated to matplotlib.
+integrated to matplotlib. You can find one in the repo, where i present Jupyter possibilities to my own lab, for a seminar. 
 
 Main logic is in analysis_script. It contains the functions i need to generate
 beautiful graphs, statistics in the aim to have repeatable and reliable 
