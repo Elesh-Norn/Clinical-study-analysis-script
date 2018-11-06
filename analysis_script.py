@@ -305,9 +305,7 @@ def correct_p_values(df):
     return p_value_df
 
 
-final_db = final_db.loc[final_db['Exclusion'] == 'No']
-final_db = final_db.loc[final_db['Change of Insuline medication'] == 'NO']
-final_db = final_db.loc[final_db['OGTT C peptide'] == 'Yes']
+
 
 def correl_graph(df, x, y, save=False):
 
