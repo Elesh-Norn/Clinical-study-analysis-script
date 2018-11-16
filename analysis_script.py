@@ -30,7 +30,6 @@ def substract_parameter(df, parameter):
 
     return difference_list, df2
 
-
 def get_simple_df(df, parameter):
     """
     Create a small dataframe with only pairs, Time point and Arm.
